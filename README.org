@@ -1,2 +1,2 @@
-#+title: electronics128
-* Electronics code
+#+title: Electronics128 Project
+* Project code
