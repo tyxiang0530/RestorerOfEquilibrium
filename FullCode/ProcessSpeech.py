@@ -113,15 +113,15 @@ def open_mic(prompt_path):
 
 
 # have our classifier make a prediction
-def predict_emotion(model_in, emo_prompt):
+def predict_emotion(emo_prompt):
     prediction = evaluate([open_mic(emo_prompt)])[0]
     print(prediction)
     return trans_table[prediction]
 
 
 # play the audio clip and send the right byte
-def reaction(model_in, emo_prompt):
-    emo_byte = predict_emotion(model_in, emo_prompt)
+def reaction(emo_prompt):
+    emo_byte = predict_emotion(emo_prompt)
     print(emo_byte)
     # arduino.write(emo_byte)
     play_prompt(random.choice(path_trans[emo_byte]))
@@ -151,4 +151,7 @@ def listen_for(keyword, game_prompt, reject_prompt):
         except Exception as e:
             print(e)
             play_prompt(reject_prompt)
+
+
+# {'sadness': 4, 'neutral': 3, 'anger': 0, 'fear': 1, 'joy': 2}
 
