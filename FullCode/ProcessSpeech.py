@@ -1,21 +1,21 @@
-import ktrain
-import tensorflow as tf
+from transformers import BertTokenizer, BertConfig,AdamW, BertForSequenceClassification,get_linear_schedule_with_warmup
+
+import torch
 import random
-import serial
 import speech_recognition as sr
 from playsound import playsound
 
 # arduino = serial.Serial(port='COM7', baudrate=9600, timeout=.1)
 # denote model loading
 
-
+# LABEL DICTIONARY # {'sadness': 4, 'neutral': 3, 'anger': 0, 'fear': 1, 'joy': 2}
 # going from emotions to bytes for arduino serial sending
 trans_table = {
-    "sadness": b'a',
-    "joy": b'b',
-    "fear": b'c',
-    "neutral": b'd',
-    "anger": b'e'
+    4: b'a',
+    2: b'b',
+    1: b'c',
+    3: b'd',
+    0: b'e'
 }
 
 # going from emotions to audio files
@@ -35,8 +35,57 @@ path_trans = {
 
 r = sr.Recognizer()
 
+# load the pre-trained model
+model = BertForSequenceClassification.from_pretrained("bert-base-uncased",
+                                                      num_labels=5,
+                                                      output_attentions=False,
+                                                      output_hidden_states=False)
+# my laptop does not have a compatible GPU so cpu
+device = torch.device('cpu')
+# send model to device
+model.to(device)
+# load finetuned part
+model.load_state_dict(torch.load('finetuned_BERT_FairyGarbHVCHECK_epoch_3.model',
+                                 map_location=torch.device('cpu')))
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased',
+                                          do_lower_case=True)
+# set max length
+MAX_LENGTH = 200
 
-# "C:\\Users\\tyxia\\Documents\\Pomona\\Classes\\2nd\\s2\\electronics128\\PythonCode\\prompt.wav"
+
+# encodes text into word embeddings
+def encode(text_arr_in):
+    encoded_data = tokenizer.batch_encode_plus(
+        text_arr_in,
+        add_special_tokens=True,
+        return_attention_mask=True,
+        pad_to_max_length=True,
+        max_length=MAX_LENGTH,
+        truncation=True,
+        return_tensors='pt'
+    )
+
+    return encoded_data
+
+
+# generates attention masks and input_ids for BERT
+def getIDs(encoded_data_in):
+    input_ids_train = encoded_data_in['input_ids']
+    attention_masks_train = encoded_data_in['attention_mask']
+
+    return input_ids_train, attention_masks_train
+
+
+# evaluates emotion of text
+def evaluate(text_in):
+    input_ids, attention_masks = getIDs(encode(text_in))
+    input_in = input_ids.to(device)
+    att = attention_masks.to(device)
+    output = model(input_in, att, return_dict=False)
+    _, prediction = torch.max(output[0], dim=1)
+    return prediction.tolist()
+
+
 # play_prompt plays the audio prompt (How are you doing today)
 def play_prompt(path):
     opening_prompt = path
@@ -65,7 +114,7 @@ def open_mic(prompt_path):
 
 # have our classifier make a prediction
 def predict_emotion(model_in, emo_prompt):
-    prediction = model_in.predict(open_mic(emo_prompt))
+    prediction = evaluate([open_mic(emo_prompt)])[0]
     print(prediction)
     return trans_table[prediction]
 
@@ -73,8 +122,9 @@ def predict_emotion(model_in, emo_prompt):
 # play the audio clip and send the right byte
 def reaction(model_in, emo_prompt):
     emo_byte = predict_emotion(model_in, emo_prompt)
-    play_prompt(random.choice(path_trans[emo_byte]))
+    print(emo_byte)
     # arduino.write(emo_byte)
+    play_prompt(random.choice(path_trans[emo_byte]))
 
 
 # function will only exit if keyword is found in speech
@@ -97,7 +147,6 @@ def listen_for(keyword, game_prompt, reject_prompt):
 
             else:
                 play_prompt(reject_prompt)
-                play_prompt(game_prompt)
 
         except Exception as e:
             print(e)
