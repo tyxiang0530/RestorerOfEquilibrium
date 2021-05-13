@@ -1,2 +1,4 @@
 #+title: Electronics128 Project
-* Project code
+* Project code for Restorer of Equilibrium
+** Arduino: Programs for controlling the arduino
+** FullCode: Python code for neural networks and pre-processing/speech to text
