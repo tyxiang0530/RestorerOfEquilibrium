@@ -1,86 +1,128 @@
-'''
-Combinations needed:
-Each finger: pinky, ring, middle, index
-Rock: p, r, m, i
-Scissors: p, r
-Paper: Nothing
-
-Initialization:
-Blink LED on and off
-
-Mouth Configurations
--         -
- -       -
-  -------
- -       -
--         -
-
-Smile: Top + middle
-Neutral: Middle
-Sad: Bottom + Middle
-
-
-'''
 #include <Servo.h> 
 
+int incomingByte;
+int pinkRing = 6;
+int midInd = 7;
+int latchPin = 4;
+int clockPin = 3;
+int dataPin = 5;
 
-int init1 = 1;
-int init2 = 2;
-int pinky = 5;
-int ring = 6;
-int middle = 7;
-int index = 9;
-
-Servo pinkf;
-Servo ringf;
-Servo middlef;
-Servo indexf;
+Servo pinkRin;
+Servo midIndex;
 
 void setup() {
     Serial.begin(9600); // set the baud rate
-    pinMode(init1, OUTPUT);
-    pinMode(init2, OUTPUT);
-    pinkf.attach(pinky);
-    ringf.attach(ring);
-    middlef.attach(middle);
-    indexf.attach(index);
-
+    pinkRin.attach(pinkRing);
+    midIndex.attach(midInd);
     Serial.println("Ready"); // print "Ready" once
+    pinMode(latchPin, OUTPUT);
     }
 
 
 void loop() {
+    // see if there's incoming serial data:
+  if (Serial.available() > 0) {
+    // read the oldest byte in the serial buffer:
+    incomingByte = Serial.read();
+    if (incomingByte == 's') {
+      scissors();
+    }
+    else if (incomingByte == 'r') {
+      rock();
+    }
+  }
+  // sad
+    else if (incomingByte == 'a' || incomingByte == 'c' || incomingByte == 'e'){
+        smile();
+    }
+
+    //joy
+    else if (incomingByte == 'b'){
+      frown();
+    }
+
+    //neutral
+    else if (incomingByte == 'd'){
+        neutral();
+    }
+
     // rock: all curl in
-    if (Serial.read() == 'r'){
-        pinkf.write(-150)
-        ringf.write(-150)
-        middlef.write(-150)
-        indexf.write(-150)
-        delay(2000)
-        Serial.print("rock");
-        pinkf.write(150)
-        ringf.write(150)
-        middlef.write(150)
-        indexf.write(150)
+    else if (incomingByte == 'r'){
+        rock();
     }
-    // paper: no change
-    else if (Serial.read() == 'p'){
-        Serial.print("paper");
-    }
+    
     // scissors: ring and pinky curl in
-    else if (Serial.read() == 's'){
-        pinkf.write(-150);
-        ringf.write(-150);
-        delay(2000);
-        pinkf.write(150);
-        ringf.write(150);
+    else if (incomingByte == 's'){
+        scissors();
     }
-    // initialization: receive byte "i"
-    else if (Serial.read() == 'i'){
-        digitalWrite(init1, HIGH)
-        digitalWrite(init2, LOW)
-        delay(100)
-        digitalWrite(init1, LOW)
-        digitalWrite(init2, HIGH)
+}
+
+
+void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
+  int i=0;
+  int pinState;
+  pinMode(myClockPin, OUTPUT);
+  pinMode(myDataPin, OUTPUT);
+  digitalWrite(myDataPin, 0);
+  digitalWrite(myClockPin, 0);
+  for (i=7; i>=0; i--)  {
+    digitalWrite(myClockPin, 0);
+    if ( myDataOut & (1<<i) ) {
+      pinState= 1;
     }
+    else {
+      pinState= 0;
+    }
+    digitalWrite(myDataPin, pinState);
+    digitalWrite(myClockPin, 1);
+    digitalWrite(myDataPin, 0);
+  }
+  digitalWrite(myClockPin, 0);
+}
+
+
+void smile(){
+  byte data = 0xFC;
+  digitalWrite(latchPin, 0);
+  shiftOut(dataPin, clockPin,data);
+  digitalWrite(latchPin, 1);
+  delay(300);
+}
+
+
+void frown(){
+  byte data = 0x3F;
+  digitalWrite(latchPin, 0);
+  shiftOut(dataPin, clockPin, data);
+  digitalWrite(latchPin, 1);
+  delay(300);
+}
+
+
+void neutral(){
+  byte data = 0x3C;
+  digitalWrite(latchPin, 0);
+  shiftOut(dataPin, clockPin, data);
+  digitalWrite(latchPin, 1);
+  delay(300);
+}
+
+
+
+void rock(){
+  pinkRin.write(0);
+  midIndex.write(0);
+  pinkRin.write(180);
+  midIndex.write(180);
+  delay(1000);
+  pinkRin.write(0);
+  midIndex.write(0);
+}
+
+
+void scissors(){
+  pinkRin.write(0);
+  pinkRin.write(180);
+  delay(1000);
+  pinkRin.write(0);
 }
