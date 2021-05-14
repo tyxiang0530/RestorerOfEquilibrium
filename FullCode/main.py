@@ -1,5 +1,3 @@
-import tensorflow as tf
-import numpy as np
 from time import sleep
 from ProcessSpeech import play_prompt, reaction, listen_for
 from DetectPlay import play_game
@@ -9,12 +7,6 @@ def main():
     # denote start of initialization
     # play init prompt
     play_prompt("audio\\init.mp3")
-    # arduino = serial.Serial(port='COM7', baudrate=9600, timeout=.1)
-    # send byte that will activate on off flashing of LED for arduino
-    # load rps model
-    rps_predict = tf.keras.models.load_model("rock_paper_scissors_cnn.h5")
-    shape_to_label = {b'r':np.array([1.,0.,0.]), b'p':np.array([0.,1.,0.]), b's':np.array([0.,0.,1.])}
-    arr_to_shape = {np.argmax(shape_to_label[x]):x for x in shape_to_label.keys()}
 
     # initialization complete
     play_prompt("audio\\initcomp.mp3")
@@ -34,8 +26,9 @@ def main():
     # tell about game
     play_prompt("audio\\yes.mp3")
 
+    sleep(3)
     # play the game
-    play_game(rps_predict)
+    play_game()
 
 
 if __name__ == "__main__":
