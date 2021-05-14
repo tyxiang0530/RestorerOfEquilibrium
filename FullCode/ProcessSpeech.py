@@ -5,7 +5,7 @@ import random
 import speech_recognition as sr
 from playsound import playsound
 
-# arduino = serial.Serial(port='COM7', baudrate=9600, timeout=.1)
+arduino = serial.Serial(port='COM5', baudrate=9600, timeout=.1)
 # denote model loading
 
 # LABEL DICTIONARY # {'sadness': 4, 'neutral': 3, 'anger': 0, 'fear': 1, 'joy': 2}
@@ -55,6 +55,11 @@ MAX_LENGTH = 200
 
 # encodes text into word embeddings
 def encode(text_arr_in):
+    '''
+    encode encodes the text you give it for bert processing
+    :param text_arr_in: the text to predict emotion on
+    :return: tensors of words you gave it
+    '''
     encoded_data = tokenizer.batch_encode_plus(
         text_arr_in,
         add_special_tokens=True,
@@ -70,6 +75,12 @@ def encode(text_arr_in):
 
 # generates attention masks and input_ids for BERT
 def getIDs(encoded_data_in):
+    '''
+    takes in encoded data and transforms into attention mask
+    and input id for BERT
+    :param encoded_data_in: encoded data to transform
+    :return: attention mask and input ids
+    '''
     input_ids_train = encoded_data_in['input_ids']
     attention_masks_train = encoded_data_in['attention_mask']
 
@@ -78,6 +89,11 @@ def getIDs(encoded_data_in):
 
 # evaluates emotion of text
 def evaluate(text_in):
+    '''
+    evaluates the text
+    :param text_in: the text
+    :return: the evaluation
+    '''
     input_ids, attention_masks = getIDs(encode(text_in))
     input_in = input_ids.to(device)
     att = attention_masks.to(device)
@@ -88,12 +104,22 @@ def evaluate(text_in):
 
 # play_prompt plays the audio prompt (How are you doing today)
 def play_prompt(path):
+    '''
+    plays the specified audio track
+    :param path: the path of the track
+    :return: 
+    '''
     opening_prompt = path
     playsound(opening_prompt)
 
 
 # open_mic plays the prompt and stores and returns the response
 def open_mic(prompt_path):
+    '''
+    plays a prompt and stores the users audio response
+    :param prompt_path: the path of the prompt 
+    :return: string of what user said
+    '''
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source, duration=1)
         play_prompt(prompt_path)
@@ -114,6 +140,11 @@ def open_mic(prompt_path):
 
 # have our classifier make a prediction
 def predict_emotion(emo_prompt):
+    '''
+    predict the emotion of text its given
+    :param emo_prompt: the path of the emotion prompt
+    :return: the emotion in translated byte form
+    '''
     prediction = evaluate([open_mic(emo_prompt)])[0]
     print(prediction)
     return trans_table[prediction]
@@ -121,14 +152,27 @@ def predict_emotion(emo_prompt):
 
 # play the audio clip and send the right byte
 def reaction(emo_prompt):
+    '''
+    finds correct emotion response clip to play to user
+    :param emo_prompt: path of the prompt
+    :return: 
+    '''
     emo_byte = predict_emotion(emo_prompt)
     print(emo_byte)
-    # arduino.write(emo_byte)
+    arduino.write(emo_byte)
     play_prompt(random.choice(path_trans[emo_byte]))
 
 
 # function will only exit if keyword is found in speech
 def listen_for(keyword, game_prompt, reject_prompt):
+    '''
+    listens for a keywords and response with either 
+    an accept prompt or a reject prompt
+    :param keyword: the keyword to listen for
+    :param game_prompt: the prompt to play if the keyword is found
+    :param reject_prompt: the prompt to play if keyword is not found
+    :return: 
+    '''
     play_prompt(game_prompt)
     exit_cond = True
     while exit_cond:
@@ -151,7 +195,4 @@ def listen_for(keyword, game_prompt, reject_prompt):
         except Exception as e:
             print(e)
             play_prompt(reject_prompt)
-
-
-# {'sadness': 4, 'neutral': 3, 'anger': 0, 'fear': 1, 'joy': 2}
 
