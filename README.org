@@ -2,3 +2,4 @@
 * Project code for Restorer of Equilibrium
 ** Arduino: Programs for controlling the arduino
 ** FullCode: Python code for neural networks and pre-processing/speech to text
+** IPYNB files are notebooks used for training models
