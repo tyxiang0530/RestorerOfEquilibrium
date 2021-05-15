@@ -1,11 +1,10 @@
 from transformers import BertTokenizer, BertConfig,AdamW, BertForSequenceClassification,get_linear_schedule_with_warmup
-
+import serial
 import torch
 import random
 import speech_recognition as sr
 from playsound import playsound
 
-arduino = serial.Serial(port='COM5', baudrate=9600, timeout=.1)
 # denote model loading
 
 # LABEL DICTIONARY # {'sadness': 4, 'neutral': 3, 'anger': 0, 'fear': 1, 'joy': 2}
@@ -107,7 +106,7 @@ def play_prompt(path):
     '''
     plays the specified audio track
     :param path: the path of the track
-    :return: 
+    :return:
     '''
     opening_prompt = path
     playsound(opening_prompt)
@@ -117,7 +116,7 @@ def play_prompt(path):
 def open_mic(prompt_path):
     '''
     plays a prompt and stores the users audio response
-    :param prompt_path: the path of the prompt 
+    :param prompt_path: the path of the prompt
     :return: string of what user said
     '''
     with sr.Microphone() as source:
@@ -151,12 +150,13 @@ def predict_emotion(emo_prompt):
 
 
 # play the audio clip and send the right byte
-def reaction(emo_prompt):
-    '''
+def reaction(emo_prompt, arduino):
+    """
     finds correct emotion response clip to play to user
     :param emo_prompt: path of the prompt
-    :return: 
-    '''
+    :param arduino: the arduino you are writing to
+    :return:
+    """
     emo_byte = predict_emotion(emo_prompt)
     print(emo_byte)
     arduino.write(emo_byte)
@@ -165,14 +165,14 @@ def reaction(emo_prompt):
 
 # function will only exit if keyword is found in speech
 def listen_for(keyword, game_prompt, reject_prompt):
-    '''
-    listens for a keywords and response with either 
+    """
+    listens for a keywords and response with either
     an accept prompt or a reject prompt
     :param keyword: the keyword to listen for
     :param game_prompt: the prompt to play if the keyword is found
     :param reject_prompt: the prompt to play if keyword is not found
-    :return: 
-    '''
+    :return:
+    """
     play_prompt(game_prompt)
     exit_cond = True
     while exit_cond:
