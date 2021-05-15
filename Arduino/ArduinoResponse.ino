@@ -16,6 +16,7 @@ void setup() {
     midIndex.attach(midInd);
     Serial.println("Ready"); // print "Ready" once
     pinMode(latchPin, OUTPUT);
+    clear();
     }
 
 
@@ -82,7 +83,7 @@ void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
 
 
 void smile(){
-  byte data = 0xFC;
+  byte data = 0x3F;
   digitalWrite(latchPin, 0);
   shiftOut(dataPin, clockPin,data);
   digitalWrite(latchPin, 1);
@@ -91,7 +92,7 @@ void smile(){
 
 
 void frown(){
-  byte data = 0x3F;
+  byte data = 0xFC;
   digitalWrite(latchPin, 0);
   shiftOut(dataPin, clockPin, data);
   digitalWrite(latchPin, 1);
@@ -107,6 +108,15 @@ void neutral(){
   delay(300);
 }
 
+
+void clear(){
+  byte data = 0x0;
+  digitalWrite(latchPin, 0);
+  shiftOut(dataPin, clockPin, data);
+  digitalWrite(latchPin, 1);
+  delay(300);
+  
+}
 
 
 void rock(){
