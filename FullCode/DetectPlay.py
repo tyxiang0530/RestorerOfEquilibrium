@@ -10,14 +10,7 @@ import tensorflow as tf
 cap = cv2.VideoCapture(1, cv2.CAP_DSHOW) #captureDevice = camera
 shape_to_label = {b'r': np.array([1.,0.,0.]), b'p': np.array([0.,1.,0.]), b's': np.array([0.,0.,1.])}
 arr_to_shape = {np.argmax(shape_to_label[x]):x for x in shape_to_label.keys()}
-arduino = serial.Serial(port ='COM5', baudrate=9600, timeout=.1)
 rps_predict = tf.keras.models.load_model("rock_paper_scissors_cnn.h5")
-arduino.setDTR(False)
-sleep(1)
-# toss any data already received, see\
-arduino.flushInput()
-arduino.setDTR(True)
-
 
 
 def play_prompt(path):
@@ -40,10 +33,10 @@ def preprocess(path):
 
 
 # play the game
-def play_game():
+def play_game(arduino):
     """
     main loop of the RPS player
-    :param
+    :param arduino: the arduino you are passing data to
     :return:
     """
 
@@ -63,7 +56,7 @@ def play_game():
     # predict what the player plays
     pred = arr_to_shape[np.argmax(rps_predict.predict(preprocess(frame[100:400,100:400])))]
 
-    arduino.write(pred)
+    arduino.write(b's')
     print(pred)
     arduino.write(b'p')
     # a flushing byte to prevent bleedthrough
